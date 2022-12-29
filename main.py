@@ -21,18 +21,20 @@ def main(argv):
     # -a = download audio only
     # -c = combine video and audio
     # -t = download thumbnail only
-    if len(argv) < 2:
-        print("> Usage: python main.py <youtube video url> [-v|-a|-c|-t]")
-        return
+    
     # use argparse to parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("url", help="url of youtube video")
+    parser.add_argument("url", help="url of youtube video", nargs="?") # nargs="?" means that it is optional
     parser.add_argument("-v", "--video", help="download video only", action="store_true")
     parser.add_argument("-a", "--audio", help="download audio only", action="store_true")
     parser.add_argument("-c", "--combine", help="combine video and audio", action="store_true")
     parser.add_argument("-t", "--thumbnail", help="download thumbnail only", action="store_true")
     args = parser.parse_args()
     all = False
+
+    # if args.url does not exist, ask for url
+    if not args.url:
+        args.url = input("> Enter url of youtube video : ")
     # check if url is valid
     if not args.url.startswith("https://www.youtube.com/watch?v="):
         print("> Invalid url, please enter a valid youtube video url")
@@ -48,7 +50,6 @@ def main(argv):
 
     global video_url
     global video_key
-
     video_url = args.url
     video_key = video_url.split("v=")[1]
     
@@ -57,11 +58,11 @@ def main(argv):
         os.mkdir(os.path.join(result_folder, video_key))
 
     # check if video is requested
-    if args.video or all:
+    if args.video or args.combine or all:
         download_video()
     
     # check if audio is requested
-    if args.audio or all:
+    if args.audio or args.combine or all:
         download_audio()
     
     # check if combine is requested
