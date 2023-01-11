@@ -37,8 +37,11 @@ def main(argv):
         args.url = input("> Enter url of youtube video : ")
     # check if url is valid
     if not args.url.startswith("https://www.youtube.com/watch?v="):
-        print("> Invalid url, please enter a valid youtube video url")
-        return
+        if args.url.startswith("https://youtube.com/shorts/"):
+            args.url = args.url.replace("https://youtube.com/shorts/", "https://www.youtube.com/watch?v=")
+        else:
+            print("> Invalid url, please enter a valid youtube video url")
+            return
     
     # if no args given, all is true
     if not args.video and not args.audio and not args.combine and not args.thumbnail:
