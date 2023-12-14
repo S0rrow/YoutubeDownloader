@@ -13,6 +13,7 @@ pwd = os.getcwd()
 result_folder = os.path.join(pwd, "results")
 video_key = ""
 video_url = ""
+video_title = ""
 
 # Path: main.py
 def main(argv):
@@ -81,11 +82,13 @@ def main(argv):
 def download_video():
     global video_key
     global video_url
+    global video_title
     # check if file already exists
     if os.path.exists(os.path.join(result_folder, video_key, video_key + ".mp4")):
         print("> Video already exists, skipping download...")
         return
     youtube = YouTube(video_url, on_progress_callback=progress_function)
+    video_title = youtube.title
     mp4_file = youtube.streams.filter(adaptive=True, file_extension="mp4").order_by("resolution").desc().first()
     # get filesize of video
     global filesize
@@ -97,21 +100,24 @@ def download_video():
 def download_audio():
     global video_key
     global video_url
+    global video_title
     if os.path.exists(os.path.join(result_folder, video_key, video_key + ".mp3")):
         print("> Audio already exists, skipping download...")
         return
     youtube = YouTube(video_url, on_progress_callback=progress_function)
+    video_title = youtube.title
     mp3_file = youtube.streams.filter(adaptive=True, only_audio=True).first()
     # get filesize of audio
     global filesize
     filesize = mp3_file.filesize
     print("> Downloading audio...")
-    mp3_file.download(os.path.join(result_folder, video_key), filename=video_key+".mp3")
-    print("\n> Downloaded audio to result as \"" + video_key + ".mp3\"")
+    mp3_file.download(os.path.join(result_folder, video_key), filename=video_title+".mp3")
+    print("\n> Downloaded audio to result as \"" + video_title + ".mp3\"")
 
 def combine_video_with_audio():
     global video_key
     global video_url
+    global video_title
     # check if file already exists
     if os.path.exists(os.path.join(result_folder, video_key, video_key + "_combined.mp4")):
         print("> Combined video already exists, skipping combine...")
@@ -132,8 +138,8 @@ def combine_video_with_audio():
     os.remove(os.path.join(result_folder, video_key, mp4_file))
     os.remove(os.path.join(result_folder, video_key, mp3_file))
     # rename combined video
-    os.rename(os.path.join(result_folder, video_key, video_key + "_combined.mp4"), os.path.join(result_folder, video_key, video_key + ".mp4"))
-    print("> Combined video and audio as \"" + video_key + ".mp4\"")
+    os.rename(os.path.join(result_folder, video_key, video_key + "_combined.mp4"), os.path.join(result_folder, video_key, video_title + ".mp4"))
+    print("> Combined video and audio as \"" + video_title + ".mp4\"")
 
 def download_thumbnail():
     global video_key
