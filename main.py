@@ -120,7 +120,7 @@ def combine_video(video_title):
 
 def download_thumbnail(video_title, video_key):
 
-    if check_if_file_exists(video_title):
+    if check_if_file_exists(video_title, "jpg"):
         return
         
     # get the url of thumbnail as highest quality
