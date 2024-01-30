@@ -10,7 +10,10 @@
 ## Installation
 - Clone the repository
 - Install the dependencies
-  - `pip install pytube moviepy`
+
+  ```
+   install.bat
+  ```
 
 ## Usage
 - Launch `main.py` with the following arguments
