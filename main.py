@@ -49,8 +49,8 @@ def main(argv):
 
     
     # check if video_key directory exists
-    if not os.path.exists(os.path.join(downloader.result_folder, downloader.video_title)):
-        os.mkdir(os.path.join(downloader.result_folder, downloader.video_title))
+    if not os.path.exists(os.path.join(downloader.result_folder, downloader.video_key)):
+        os.mkdir(os.path.join(downloader.result_folder, downloader.video_key))
 
     # check if video is requested
     if args.video or args.combine or all:
@@ -59,17 +59,17 @@ def main(argv):
     # check if audio is requested
     if args.audio or args.combine or all:
         downloader.download_audio()
-        #download_audio(video_title=video_title, youtube=youtube)
+        #download_audio(video_key=video_key, youtube=youtube)
     
     # check if combine is requested
     if args.combine or all:
         downloader.combine_video()
-        #combine_video(video_title=video_title)
+        #combine_video(video_key=video_key)
     
     # check if thumbnail is requested
     if args.thumbnail or all:
         downloader.download_thumbnail()
-        #download_thumbnail(video_key=video_key, video_title=video_title)
+        #download_thumbnail(video_key=video_key, video_key=video_key)
     
     print(f"> Done downloading from {video_url}")
 
