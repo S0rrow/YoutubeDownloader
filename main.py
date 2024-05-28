@@ -5,9 +5,8 @@ import moviepy.editor as mpe
 from pytube import YouTube
 from pytube.cli import on_progress
 import argparse
+from class_test import Download_Module
 #path data
-pwd = os.getcwd()
-result_folder = os.path.join(pwd, "results")
 
 def main(argv):
     # argv is url of youtube video
@@ -37,35 +36,42 @@ def main(argv):
             print("> Invalid url, please enter a valid youtube video url")
             return
     
+    video_url = args.url
+    downloader = Download_Module(video_url)
+    
     # if no args given, all is true
     if not args.video and not args.audio and not args.combine and not args.thumbnail:
         all = True
     
     # check if result folder exists
-    if not os.path.exists(result_folder):
-        os.mkdir(result_folder)
-        
-    video_url = args.url
-    video_title, video_key, youtube = video_data(video_url)
+    if not os.path.exists(downloader.result_folder):
+        os.mkdir(downloader.result_folder)
+
     
     # check if video_key directory exists
-    if not os.path.exists(os.path.join(result_folder, video_title)):
-        os.mkdir(os.path.join(result_folder, video_title))
+    if not os.path.exists(os.path.join(downloader.result_folder, downloader.video_title)):
+        os.mkdir(os.path.join(downloader.result_folder, downloader.video_title))
 
     # check if video is requested
     if args.video or args.combine or all:
-        download_video(video_title=video_title, youtube=youtube)
+        downloader.download_video()
     
     # check if audio is requested
     if args.audio or args.combine or all:
-        download_audio(video_title=video_title, youtube=youtube)
+        downloader.download_audio()
+        #download_audio(video_title=video_title, youtube=youtube)
     
     # check if combine is requested
     if args.combine or all:
-        combine_video(video_title=video_title)
+        downloader.combine_video()
+        #combine_video(video_title=video_title)
     
     # check if thumbnail is requested
     if args.thumbnail or all:
-        download_thumbnail(video_key=video_key, video_title=video_title)
+        downloader.download_thumbnail()
+        #download_thumbnail(video_key=video_key, video_title=video_title)
     
     print(f"> Done downloading from {video_url}")
+
+if __name__ == "__main__":
+    main(sys.argv)
