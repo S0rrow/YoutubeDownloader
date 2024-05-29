@@ -15,7 +15,7 @@ class Download_Module:
         
         self.video_url = url
         self.youtube = YouTube(self.video_url, on_progress_callback=on_progress)
-        self.video_key = self.youtube.title
+        self.video_title = self.youtube.title
         self.video_key = self.video_url.split("v=")[1]
 
     
