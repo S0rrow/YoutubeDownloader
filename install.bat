@@ -1,7 +1,8 @@
 @echo off
+python -m venv venv
+venv\Scripts\activate
+python -m pip install -U pip
+pip install -r requirements.txt
 
-pip install pytube
-pip install moviepy
-
-echo Succesfully...
+echo installation sucess
 pause

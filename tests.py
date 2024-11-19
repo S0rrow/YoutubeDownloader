@@ -2,7 +2,7 @@ import pytest
 import os
 import sys
 from io import StringIO
-from class_test import Download_Module
+from DownloadModule import DownloadModule
 import shutil
 
 def remove_folder(key):
@@ -11,15 +11,15 @@ def remove_folder(key):
     shutil.rmtree(f"{result_folder}/{key}")
 
 def test_video_title():
-    downloader = Download_Module("https://www.youtube.com/watch?v=AXuhZ8h8_cU")
+    downloader = DownloadModule("https://www.youtube.com/watch?v=AXuhZ8h8_cU")
     assert downloader.video_title == "Cyberpunk (サイバーパンク) Sakuga MAD"
 
 def test_video_key():
-    downloader = Download_Module("https://www.youtube.com/watch?v=AXuhZ8h8_cU")
+    downloader = DownloadModule("https://www.youtube.com/watch?v=AXuhZ8h8_cU")
     assert downloader.video_key == "AXuhZ8h8_cU"
 
 def test_download():
-    downloader = Download_Module("https://www.youtube.com/watch?v=rEES3mGMJSE")
+    downloader = DownloadModule("https://www.youtube.com/watch?v=rEES3mGMJSE")
     downloader.download_video()
     downloader.download_audio()
     downloader.download_thumbnail()

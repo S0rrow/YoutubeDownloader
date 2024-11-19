@@ -5,7 +5,7 @@ import moviepy.editor as mpe
 from pytube import YouTube
 from pytube.cli import on_progress
 import argparse
-from class_test import Download_Module
+from DownloadModule import DownloadModule
 #path data
 
 def main(argv):
@@ -37,7 +37,7 @@ def main(argv):
             return
     
     video_url = args.url
-    downloader = Download_Module(video_url)
+    downloader = DownloadModule(video_url)
     
     # if no args given, all is true
     if not args.video and not args.audio and not args.combine and not args.thumbnail:
