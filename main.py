@@ -1,77 +1,99 @@
-import urllib.request
-import os
-import sys
-import moviepy.editor as mpe
-from pytube import YouTube
-from pytube.cli import on_progress
-import argparse
-from DownloadModule import DownloadModule
-#path data
+from utils import Logger
+import os, re
+from yt_dlp import YoutubeDL
 
-def main(argv):
-    # argv is url of youtube video
-    # -v = download video only
-    # -a = download audio only
-    # -c = combine video and audio
-    # -t = download thumbnail only
-    
-    # use argparse to parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("url", help="url of youtube video", nargs="?") # nargs="?" means that it is optional
-    parser.add_argument("-v", "--video", help="download video only", action="store_true")
-    parser.add_argument("-a", "--audio", help="download audio only", action="store_true")
-    parser.add_argument("-c", "--combine", help="combine video and audio", action="store_true")
-    parser.add_argument("-t", "--thumbnail", help="download thumbnail only", action="store_true")
-    args = parser.parse_args()
-    all = False
+# Initialize Logger
+logger = Logger(options={"name": "YouTubeDownloader"})
 
-    # if args.url does not exist, ask for url
-    if not args.url:
-        args.url = input("> Enter url of youtube video : ")
-    # check if url is valid
-    if not args.url.startswith("https://www.youtube.com/watch?v="):
-        if args.url.startswith("https://youtube.com/shorts/"):
-            args.url = args.url.replace("https://youtube.com/shorts/", "https://www.youtube.com/watch?v=")
-        else:
-            print("> Invalid url, please enter a valid youtube video url")
-            return
+def extract_video_key(url: str) -> str:
+    """
+    Extracts the video key from a valid YouTube URL.
+    :param url: YouTube URL (shortened or full).
+    :return: The video key if valid, else raises a ValueError.
+    """
+    # Define a regex pattern to match YouTube URLs
+    youtube_pattern = re.compile(
+        r'(?:https?://)?'                          # Optional protocol
+        r'(?:www\.)?'                              # Optional 'www.'
+        r'(?:youtube\.com/watch\?v=|youtu\.be/)'   # Domain and path
+        r'([a-zA-Z0-9_-]{11})'                     # Video key (11 characters)
+    )
     
-    video_url = args.url
-    downloader = DownloadModule(video_url)
+    match = youtube_pattern.search(url)
+    if not match:
+        raise ValueError(f"Invalid YouTube URL: {url}")
     
-    # if no args given, all is true
-    if not args.video and not args.audio and not args.combine and not args.thumbnail:
-        all = True
-    
-    # check if result folder exists
-    if not os.path.exists(downloader.result_folder):
-        os.mkdir(downloader.result_folder)
+    return match.group(1)
 
-    
-    # check if video_key directory exists
-    if not os.path.exists(os.path.join(downloader.result_folder, downloader.video_key)):
-        os.mkdir(os.path.join(downloader.result_folder, downloader.video_key))
 
-    # check if video is requested
-    if args.video or args.combine or all:
-        downloader.download_video()
-    
-    # check if audio is requested
-    if args.audio or args.combine or all:
-        downloader.download_audio()
-        #download_audio(video_key=video_key, youtube=youtube)
-    
-    # check if combine is requested
-    if args.combine or all:
-        downloader.combine_video()
-        #combine_video(video_key=video_key)
-    
-    # check if thumbnail is requested
-    if args.thumbnail or all:
-        downloader.download_thumbnail()
-        #download_thumbnail(video_key=video_key, video_key=video_key)
-    
-    print(f"> Done downloading from {video_url}")
+def download_youtube_content(url, choice):
+    try:
+        # Validate and extract video key
+        video_key = extract_video_key(url)
+        logger.log(f"Extracted video key: {video_key}", flag=3)
+        base_dir = os.path.join("results", video_key)
+        os.makedirs(base_dir, exist_ok=True)  # Create directory if it doesn't exist
 
+        logger.log(f"Starting download for {url} with choice '{choice}'", flag=3)
+
+        if choice in {"thumbnail", "all"}:
+            logger.log(f"Downloading thumbnail for {video_key}...", flag=4)
+            ydl_opts_thumbnail = {
+                'skip_download': True,
+                'writethumbnail': True,
+                'outtmpl': os.path.join(base_dir, '%(title)s.%(ext)s'),
+                'postprocessors': [{
+                    'key': 'EmbedThumbnail',
+                }],
+            }
+            with YoutubeDL(ydl_opts_thumbnail) as ydl:
+                ydl.download([url])
+
+        if choice in {"audio", "all"}:
+            logger.log(f"Downloading audio for {video_key}...", flag=4)
+            ydl_opts_audio = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': os.path.join(base_dir, '%(title)s.%(ext)s'),
+            }
+            with YoutubeDL(ydl_opts_audio) as ydl:
+                ydl.download([url])
+
+        if choice in {"video", "all"}:
+            logger.log(f"Downloading video (no sound) for {video_key}...", flag=4)
+            ydl_opts_video_no_sound = {
+                'format': 'bestvideo[ext=mp4]',
+                'outtmpl': os.path.join(base_dir, '%(title)s (no sound).%(ext)s'),
+            }
+            with YoutubeDL(ydl_opts_video_no_sound) as ydl:
+                ydl.download([url])
+
+            logger.log(f"Downloading video (with sound) for {video_key}...", flag=4)
+            ydl_opts_video_with_sound = {
+                'format': 'bestvideo+bestaudio/best',
+                'merge_output_format': 'mp4',
+                'outtmpl': os.path.join(base_dir, '%(title)s (sound).%(ext)s'),
+            }
+            with YoutubeDL(ydl_opts_video_with_sound) as ydl:
+                ydl.download([url])
+
+        logger.log(f"Downloads completed for {video_key}. Files saved in '{base_dir}'", flag=3)
+
+    except Exception as e:
+        logger.log(f"Error occurred: {str(e)}", flag=1)
+
+# Example usage
 if __name__ == "__main__":
-    main(sys.argv)
+    youtube_url = input("Enter the YouTube URL: ")
+    print("Options: thumbnail, audio, video, all")
+    user_choice = input("Choose what to download: ").lower()
+
+    if user_choice not in {"thumbnail", "audio", "video", "all"}:
+        logger.log(f"Invalid choice '{user_choice}' entered.", flag=2)
+        print("Invalid choice! Options are: thumbnail, audio, video, all.")
+    else:
+        download_youtube_content(youtube_url, user_choice)

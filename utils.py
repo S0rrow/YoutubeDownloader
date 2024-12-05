@@ -1,54 +1,56 @@
 import os
 from datetime import datetime, timezone, timedelta
+from threading import Lock
 
-parent_path = os.path.dirname(os.path.abspath(__file__))
+# Constants for log levels
+LOG_LEVELS = {
+    0: "DEBUG",
+    1: "ERROR",
+    2: "WARN",
+    3: "STATUS",
+    4: "INFO"
+}
 
-class Logger():
-    '''
-        Logger for generating log messages given in string format to files under given path.
-        - path: location directory of log files to be generated at
-        - options: logger options getting inputs in dictionary format
-            - name(optional): name of source logger is running at. if not set, will call __name__ variable of utils.py
-    '''
-    path = None 
-    options = None
-    
-    # if current path is ./views, than path is ../logs
-    def __init__(self, options:dict=None, path=f"{parent_path}/logs"):
-        self.path = path
-        self.options = options
+class Logger:
+    """
+    A logger class for generating log messages.
+    - path: Directory where log files will be stored.
+    - options: Dictionary for logger configuration.
+        - name(optional): Name of the source logger (defaults to __name__ of the calling module).
+    """
+    def __init__(self, options: dict = None, path: str = None):
+        parent_path = os.path.dirname(os.path.abspath(__file__))
+        self.path = path or os.path.join(parent_path, "logs")
+        self.options = options or {}
+        self.lock = Lock()
 
-    def log(self, msg:str, flag:int=None, name:str=None):  # 수정: 기본값을 None으로 변경
-        '''
-            Save given log messages according to level of depth as files.
-            - flag: logs being printed will be saved according to level of depth given in flag
-                - 0: debug
-                - 1: error
-                - 2: warn
-                - 3: status
-                - 4: info
-            - name(optional): name of source logger is running at. if not set, will call __name__ variable of utils.py
-        '''
-        options = self.options
-        if not name or options.get('name', False):
-            name = __name__
-        if not flag:
-            flag = 0
-        head = ["DEBUG", "ERROR", "WARN", "STATUS", "INFO"]
+        # Ensure the log directory exists
+        os.makedirs(self.path, exist_ok=True)
+
+    def log(self, msg: str, flag: int = 0, name: str = None):
+        """
+        Save log messages based on log level.
+        - msg: Log message.
+        - flag: Log level (0: DEBUG, 1: ERROR, 2: WARN, 3: STATUS, 4: INFO).
+        - name: Name of the logger (defaults to options['name'] or the calling module's __name__).
+        """
+        if flag not in LOG_LEVELS:
+            raise ValueError(f"Invalid log level: {flag}. Valid levels are: {list(LOG_LEVELS.keys())}")
+
+        # Get logger name
+        name = name or self.options.get("name", __name__)
+
+        # Get current timestamp in KST (UTC+9)
         utc_now = datetime.now(timezone.utc)
         kst_now = utc_now + timedelta(hours=9)
         now = kst_now.strftime("%Y-%m-%d %H:%M:%S")
 
-        if not os.path.isdir(self.path):
-            os.mkdir(self.path)
+        # Format log message
+        log_type = LOG_LEVELS[flag]
+        log_message = f"[{now}][{log_type}]({name}) > {msg.replace(os.linesep, ' ')}\n"
 
-        msg.replace("\n", " ")
-        msg.replace("  ", " ")
-        log_file = f"{self.path}/{head[flag]}.log"
-        if not name:
-            log_message = f"[{now}][{head[flag]}]({__name__}) > {msg}\n"
-        else:
-            log_message = f"[{now}][{head[flag]}]({name}) > {msg}\n"
-        
-        with open(log_file, "a") as f:
-            f.write(log_message)
+        # Write to log file
+        log_file = os.path.join(self.path, f"{log_type}.log")
+        with self.lock:  # Ensure thread safety
+            with open(log_file, "a") as f:
+                f.write(log_message)
